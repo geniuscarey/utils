@@ -3,6 +3,7 @@ import os
 import shlex
 import ctypes, os
 import time
+import pprint
 
 CLOCK_MONOTONIC_RAW = 4
 class timespec(ctypes.Structure):
@@ -27,6 +28,7 @@ class Log(object):
         self._logger = logger
 
     def do_nothing(self, *args, **kwargs):
+        print args, kwargs
         pass
 
     def __getattr__(self, name):
@@ -41,16 +43,20 @@ class ExecuteException(Exception):
         self.cmd = cmd
         self.stdout = stdout
         self.stderr = stderr
-        err_msg = 'execute %s error, ret_code: %s, stdout: %s, stderr: %s\n' \
-                  % (self.cmd, self.ret_code, self.stdout, self.stderr)
-        super(ExecuteException, self).__init__(message)
+        err_msg = 'execute cmd error:\n'
+        err_dict = {"cmd": cmd,
+                    "ret_code": ret_code,
+                    "stdout": stdout,
+                    "stderr": stderr}
+        err_msg += pprint.pformat(err_dict, indent=1)
+        super(ExecuteException, self).__init__(err_msg)
 
 def execute(cmd,
             run_as_root=False,
             input=None,
             retries=1,
             retry_delay=0,
-            expect_retcode=[],
+            expect_retcode=[0],
             shell=True,
             logger=None):
 
@@ -75,7 +81,7 @@ def execute(cmd,
         ret_code = pobj.returncode
         time_elapse = monotonic_time() - start_time
         _log.info("run cmd %s return %s" % (cmd, ret_code))
-        stdout, stderr = result
+        stdout, stderr = res
         if expect_retcode and ret_code not in expect_retcode:
             raise ExecuteException(cmd=cmd,
                                    ret_code=ret_code,
