@@ -23,13 +23,14 @@ def monotonic_time():
         raise OSError(errno_, os.strerror(errno_))
     return t.tv_sec + t.tv_nsec * 1e-9
 
+DEBUG = True
 class Log(object):
     def __init__(self, logger):
         self._logger = logger
 
     def do_nothing(self, *args, **kwargs):
-        print args, kwargs
-        pass
+        if DEBUG:
+            print args, kwargs
 
     def __getattr__(self, name):
         if self._logger:
